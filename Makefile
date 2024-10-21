@@ -2,10 +2,12 @@ mysh : mysh.c
 	@gcc mysh.c -o mysh
 
 leaks:
+	@echo "Running valgrind..."
 	@valgrind \
 				--leak-check=full \
         --show-leak-kinds=all \
         --track-origins=yes \
+				--trace-children=yes \
         ./mysh
 
 clean:
