@@ -13,8 +13,8 @@
 
 // collect the input into 3 string arrays
 
-void fail(int id){
-  printf("Reached %d!\n", id); 
+void fail(int id) {
+  printf("Reached %d!\n", id);
   exit(EXIT_FAILURE);
 }
 
@@ -42,9 +42,9 @@ int main() {
     }
 
     // null-terminate if less args than we have space for
-    if (i < MAX_PIPES + 1){
+    if (i < MAX_PIPES + 1) {
       temp[i] = NULL;
-      args[i] = NULL; 
+      args[i] = NULL;
     }
 
     for (i = 0; i < MAX_PIPES + 1 && temp[i] != NULL; ++i) {
@@ -62,7 +62,23 @@ int main() {
 
       // terminate each string array in NULL, as mandated by exec
       args[i][j] = NULL;
+
+      // don't need this anymore
+      free(temp[i]);
     }
 
+    // (use...)
+    for (i = 0; args[i] != NULL; ++i) {
+      for (j = 0; args[i][j] != NULL; ++j)
+        printf("%s ", args[i][j]);
+      putchar('\n');
+    }  
+    
+    // clear for next use
+    for (i = 0; args[i] != NULL; ++i) {
+      for (j = 0; args[i][j] != NULL; ++j)
+        free(args[i][j]);
+      free(args[i]);
+    }
   }
 }
