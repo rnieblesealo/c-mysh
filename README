@@ -1,2 +1,12 @@
+Tested Requirements: 
+  - [ ] exit
+  - [ ] End-of-input
+  - [ ] cd
+  - [ ] Running 1 program
+  - [ ] Running 2 programs
+  - [ ] Running 3 programs
+  - [ ] Pipes
+  - [ ] Empty input 
+
 Notes:
   - Valgrind reports mem. leaks which I assume are child procs, so I'm not doing anything about it

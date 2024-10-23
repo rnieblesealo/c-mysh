@@ -40,7 +40,14 @@ int main() {
     printf("$ ");
 
     fgets(cmd_buffer, BUF_SIZE, stdin);
+
+    // handle entering a space
+    if (strcmp(cmd_buffer, "\n") == 0)
+      continue;
+
     cmd_buffer[strcspn(cmd_buffer, "\n")] = '\0';
+
+    // the part above works, but if there's only spaces, it breaks :/
 
     int cmd_count;
     int i, j;
