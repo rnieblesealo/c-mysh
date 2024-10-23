@@ -1,0 +1,2 @@
+Notes:
+  - Valgrind reports mem. leaks which I assume are child procs, so I'm not doing anything about it

@@ -12,6 +12,9 @@
 #define PIPE_SYMBOL "|"
 #define SPACE " "
 
+#define CHANGE_DIR_CMD "cd"
+#define EXIT_CMD "exit"
+
 void wait4procs() {
   // wait for process completion to move on
   do {
@@ -80,17 +83,25 @@ int main() {
       free(temp[i]);
     }
 
-    // show commands
-    /*
-    for (i = 0; args[i] != NULL; ++i){
-      for (j = 0; args[i][j] != NULL; ++j)
-        printf("%s ", args[i][j]);
-      putchar('\n');
-    }
-    */
-
     int pipefd1[2], pipefd2[2];
     pid_t pid1, pid2, pid3;
+
+    // handle exit
+    if (strcmp(args[0][0], EXIT_CMD) == 0) {
+      freeargs(args);
+      exit(EXIT_SUCCESS);
+    }
+
+    // handle cd
+    if (strcmp(args[0][0], CHANGE_DIR_CMD) == 0) {
+      if (chdir(args[0][1]) == -1)
+        perror("chdir");
+
+      // doing the below assumes cd will always be the first comman
+      freeargs(args);
+      wait4procs();
+      continue;
+    }
 
     if (cmd_count > 1)
       if (pipe(pipefd1) == -1)
@@ -119,28 +130,29 @@ int main() {
       wait4procs();
       continue;
     }
-    
-    // RESUME HERE
-    // if have 2 commands, need to open stdin but not reopen stdout
 
-    pipe(pipefd2);
+    if (cmd_count > 2)
+      if (pipe(pipefd2) == -1)
+        perror("pipe");
 
     pid2 = fork();
     if (pid2 == 0) {
       if (dup2(pipefd1[0], STDIN_FILENO) == -1)
         perror("dup2");
 
-      if (dup2(pipefd2[1], STDOUT_FILENO) == -1)
-        perror("dup2");
+      if (cmd_count > 2) {
+        if (dup2(pipefd2[1], STDOUT_FILENO) == -1)
+          perror("dup2");
+
+        if (close(pipefd2[0]) == -1)
+          perror("close");
+        if (close(pipefd2[1]) == -1)
+          perror("close");
+      }
 
       if (close(pipefd1[0]) == -1)
         perror("close");
       if (close(pipefd1[1]) == -1)
-        perror("close");
-
-      if (close(pipefd2[0]) == -1)
-        perror("close");
-      if (close(pipefd2[1]) == -1)
         perror("close");
 
       execvp(args[1][0], args[1]);
@@ -153,6 +165,14 @@ int main() {
       perror("close");
     if (close(pipefd1[1]) == -1)
       perror("close");
+
+    if (cmd_count <= 2) {
+      freeargs(args);
+      wait4procs();
+      continue;
+    }
+
+    // anything past here runs all 3 commands with all 2 pipes
 
     pid3 = fork();
     if (pid3 == 0) {
