@@ -6,77 +6,63 @@
 
 #define BUF_SIZE 1024
 #define MAX_ARGS 32
-#define MAX_PIPES 3
+#define MAX_PIPES 2
+
+#define PIPE_SYMBOL "|"
+#define SPACE " "
+
+// collect the input into 3 string arrays
+
+void fail(int id){
+  printf("Reached %d!\n", id); 
+  exit(EXIT_FAILURE);
+}
 
 int main() {
+  char **args[MAX_PIPES + 1];
   char cmd_buffer[BUF_SIZE];
-  char **tokens;
-  int token_c;
-  int i, j;
 
   while (1) {
     printf("$ ");
 
-    // get whole command, clean newlines
     fgets(cmd_buffer, BUF_SIZE, stdin);
     cmd_buffer[strcspn(cmd_buffer, "\n")] = '\0';
 
-    // tokenize by pipe
-    char *tok = strtok(cmd_buffer, "|");
-    for (i = 0; tok != NULL; ++i) {
-      tokens[i] = (char *)malloc(strlen(tok) * sizeof(char));
-      strcpy(tokens[i], tok);
+    int i, j;
+    char *temp[MAX_PIPES + 1];
+    char *tok;
 
-      tok = strtok(NULL, "|");
+    // tokenize by pipe, copying each string
+    tok = strtok(cmd_buffer, PIPE_SYMBOL);
+    for (i = 0; i < MAX_PIPES + 1 && tok != NULL; ++i) {
+      temp[i] = (char *)malloc(strlen(tok) * sizeof(char));
+      strcpy(temp[i], tok);
+
+      tok = strtok(NULL, PIPE_SYMBOL);
     }
 
-    token_c = i;
-
-    char **args;
-    int arg_c = 0;
-    
-    for (i = 0; i < token_c - 1; ++i) {
-      // wipe
-      for (j = 0; j < arg_c; ++j)
-        free(args[j]);
-      arg_c = 0;
-
-      // tokenize by space
-      char *tok = strtok(tokens[i], " ");
-      for (j = 0; tok != NULL && j < MAX_ARGS; ++j) {
-        args[j] = (char *)malloc(strlen(tok) * sizeof(char));
-        strcpy(args[j], tok);
-
-        tok = strtok(NULL, " ");
-      }
-
-      arg_c = j;
-
-      printf("running: ");
-      for (j = 0; j < arg_c; ++j)
-        printf("%s ", args[j]);
-      putchar('\n');
-      
-      int pipefd[2];
-      pipe(pipefd);
-      
-      int pid = fork();
-      if (pid == 0){
-        dup2(pipefd[1], STDOUT_FILENO);
-        
-        execvp(args[0], args);
-
-        perror("exec");
-        exit(EXIT_FAILURE);
-      }
-
-      dup2(pipefd[0], STDIN_FILENO);
-      close(pipefd[1]);
+    // null-terminate if less args than we have space for
+    if (i < MAX_PIPES + 1){
+      temp[i] = NULL;
+      args[i] = NULL; 
     }
-   
-    execvp(args[0], args);
 
-    perror("exec");
-    exit(EXIT_FAILURE);
+    for (i = 0; i < MAX_PIPES + 1 && temp[i] != NULL; ++i) {
+      // store each set of args as an array of 32 strings max
+      args[i] = (char **)malloc(MAX_ARGS * sizeof(char *));
+
+      // tokenize by space, copying to the above
+      tok = strtok(temp[i], SPACE);
+      for (j = 0; tok != NULL; ++j) {
+        args[i][j] = (char *)malloc(strlen(tok) * sizeof(char));
+        strcpy(args[i][j], tok);
+
+        tok = strtok(NULL, SPACE);
+      }
+
+      // terminate each string array in NULL, as mandated by exec
+      args[i][j] = NULL;
+    }
+
   }
 }
