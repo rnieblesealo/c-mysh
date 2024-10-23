@@ -167,6 +167,11 @@ int main() {
       perror("close");
 
     if (cmd_count <= 2) {
+      if (close(pipefd2[0]) == -1)
+        perror("close");
+      if (close(pipefd2[1]) == -1)
+        perror("close");
+
       freeargs(args);
       wait4procs();
       continue;
@@ -196,7 +201,8 @@ int main() {
     if (close(pipefd2[1]) == -1)
       perror("close");
 
-    // clear input storage for next use
+    // move on!
     freeargs(args);
+    wait4procs();
   }
 }
