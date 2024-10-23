@@ -83,7 +83,7 @@ int main() {
 
       // tokenize by space, copying to the above
       tok = strtok(temp[i], SPACE);
-      for (j = 0; tok != NULL; ++j) {
+      for (j = 0; j < MAX_ARGS && tok != NULL; ++j) {
         args[i][j] = (char *)malloc(strlen(tok) * sizeof(char));
         strcpy(args[i][j], tok);
 

@@ -5,10 +5,12 @@ Tested Requirements:
   - [x] 1 pipe
   - [x] 2 pipes
   - [x] Empty input 
-  - [ ] Argument overflow
-    - Results in double-free, exec failing to find file, and IOT instruction
-    - Trim this at the input collection stage
+  - [x] Argument overflow
+    - (All this is in past tense)
+      - Results in double-free, exec failing to find file, and IOT instruction
+      - Trim this at the input collection stage
   - [ ] Buffer overflow
+    - fgets should try and make sense of what's left over in the buffer
 
 Bugs:
   - [x] Empty input segfaults when trailing spaces and then newline 
