@@ -1,3 +1,4 @@
+#include <ctype.h>
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -41,11 +42,17 @@ int main() {
 
     fgets(cmd_buffer, BUF_SIZE, stdin);
 
-    // handle entering a space
-    if (strcmp(cmd_buffer, "\n") == 0)
-      continue;
-
     cmd_buffer[strcspn(cmd_buffer, "\n")] = '\0';
+
+    // handle input that is either just an enter or all spaces 
+    int all_spaces = 1;
+    for (int i = 0; cmd_buffer[i] != '\0'; ++i) {
+      if (cmd_buffer[i] != ' ')
+        all_spaces = 0;
+    }
+
+    if (all_spaces)
+      continue;
 
     // the part above works, but if there's only spaces, it breaks :/
 
@@ -159,6 +166,7 @@ int main() {
 
       if (close(pipefd1[0]) == -1)
         perror("close");
+
       if (close(pipefd1[1]) == -1)
         perror("close");
 
@@ -174,11 +182,6 @@ int main() {
       perror("close");
 
     if (cmd_count <= 2) {
-      if (close(pipefd2[0]) == -1)
-        perror("close");
-      if (close(pipefd2[1]) == -1)
-        perror("close");
-
       freeargs(args);
       wait4procs();
       continue;

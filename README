@@ -1,12 +1,22 @@
 Tested Requirements: 
-  - [ ] exit
-  - [ ] End-of-input
-  - [ ] cd
-  - [ ] Running 1 program
-  - [ ] Running 2 programs
-  - [ ] Running 3 programs
-  - [ ] Pipes
-  - [ ] Empty input 
+  - [x] exit
+  - [x] End-of-input (Ctrl+D)
+  - [x] cd
+  - [x] 1 pipe
+  - [x] 2 pipes
+  - [x] Empty input 
+  - [ ] Argument overflow
+    - Results in double-free, exec failing to find file, and IOT instruction
+    - Trim this at the input collection stage
+  - [ ] Buffer overflow
+
+Bugs:
+  - [x] Empty input segfaults when trailing spaces and then newline 
+    - Works fine when any other kind of char is trailing
+  - [x] Bad file desc. when piping 2 (output still ok)
+    - Doesn't happen when piping 3, just 2
+    - Error says it's close's fault
+    - Seems we're closing something that's already closed since output is ok?
 
 Notes:
   - Valgrind reports mem. leaks which I assume are child procs, so I'm not doing anything about it
