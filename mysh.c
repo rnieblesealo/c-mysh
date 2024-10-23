@@ -12,11 +12,21 @@
 #define PIPE_SYMBOL "|"
 #define SPACE " "
 
-// collect the input into 3 string arrays
+void wait4procs() {
+  // wait for process completion to move on
+  do {
+    while (wait(NULL) > 0)
+      ;
+  } while (errno != ECHILD);
+}
 
-void fail(int id) {
-  printf("Reached %d!\n", id);
-  exit(EXIT_FAILURE);
+void freeargs(char **args[]) {
+  // just null-term'd 2d char array clearing
+  for (int i = 0; args[i] != NULL; ++i) {
+    for (int j = 0; args[i][j] != NULL; ++j)
+      free(args[i][j]);
+    free(args[i]);
+  }
 }
 
 int main() {
@@ -29,6 +39,7 @@ int main() {
     fgets(cmd_buffer, BUF_SIZE, stdin);
     cmd_buffer[strcspn(cmd_buffer, "\n")] = '\0';
 
+    int cmd_count;
     int i, j;
     char *temp[MAX_PIPES + 1];
     char *tok;
@@ -43,9 +54,10 @@ int main() {
     }
 
     // null-terminate if less args than we have space for
-    if (i < MAX_PIPES + 1) {
-      temp[i] = NULL;
-      args[i] = NULL;
+    cmd_count = i;
+    if (cmd_count < MAX_PIPES + 1) {
+      temp[cmd_count] = NULL;
+      args[cmd_count] = NULL;
     }
 
     for (i = 0; i < MAX_PIPES + 1 && temp[i] != NULL; ++i) {
@@ -80,23 +92,36 @@ int main() {
     int pipefd1[2], pipefd2[2];
     pid_t pid1, pid2, pid3;
 
-    pipe(pipefd1);
+    if (cmd_count > 1)
+      if (pipe(pipefd1) == -1)
+        perror("pipe");
 
     pid1 = fork();
     if (pid1 == 0) {
-      if (dup2(pipefd1[1], STDOUT_FILENO) == -1)
-        perror("dup2");
+      if (cmd_count > 1) {
+        if (dup2(pipefd1[1], STDOUT_FILENO) == -1)
+          perror("dup2");
 
-      if (close(pipefd1[0]) == -1)
-        perror("close");
-      if (close(pipefd1[1]) == -1)
-        perror("close");
+        if (close(pipefd1[0]) == -1)
+          perror("close");
+        if (close(pipefd1[1]) == -1)
+          perror("close");
+      }
 
       execvp(args[0][0], args[0]);
 
       perror("exec");
       exit(EXIT_FAILURE);
     }
+
+    if (cmd_count <= 1) {
+      freeargs(args);
+      wait4procs();
+      continue;
+    }
+    
+    // RESUME HERE
+    // if have 2 commands, need to open stdin but not reopen stdout
 
     pipe(pipefd2);
 
@@ -151,17 +176,7 @@ int main() {
     if (close(pipefd2[1]) == -1)
       perror("close");
 
-    // wait for process completion to move on
-    do {
-      while (wait(NULL) > 0)
-        ;
-    } while (errno != ECHILD);
-
     // clear input storage for next use
-    for (i = 0; args[i] != NULL; ++i) {
-      for (j = 0; args[i][j] != NULL; ++j)
-        free(args[i][j]);
-      free(args[i]);
-    }
+    freeargs(args);
   }
 }
