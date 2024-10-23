@@ -1,3 +1,0 @@
-Approach:
-  Store entire input in command buffer
-  Tokenize it into another array

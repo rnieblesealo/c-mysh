@@ -1,3 +1,4 @@
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -67,14 +68,96 @@ int main() {
       free(temp[i]);
     }
 
-    // (use...)
-    for (i = 0; args[i] != NULL; ++i) {
+    // show commands
+    /*
+    for (i = 0; args[i] != NULL; ++i){
       for (j = 0; args[i][j] != NULL; ++j)
         printf("%s ", args[i][j]);
       putchar('\n');
-    }  
-    
-    // clear for next use
+    }
+    */
+
+    int pipefd1[2], pipefd2[2];
+    pid_t pid1, pid2, pid3;
+
+    pipe(pipefd1);
+
+    pid1 = fork();
+    if (pid1 == 0) {
+      if (dup2(pipefd1[1], STDOUT_FILENO) == -1)
+        perror("dup2");
+
+      if (close(pipefd1[0]) == -1)
+        perror("close");
+      if (close(pipefd1[1]) == -1)
+        perror("close");
+
+      execvp(args[0][0], args[0]);
+
+      perror("exec");
+      exit(EXIT_FAILURE);
+    }
+
+    pipe(pipefd2);
+
+    pid2 = fork();
+    if (pid2 == 0) {
+      if (dup2(pipefd1[0], STDIN_FILENO) == -1)
+        perror("dup2");
+
+      if (dup2(pipefd2[1], STDOUT_FILENO) == -1)
+        perror("dup2");
+
+      if (close(pipefd1[0]) == -1)
+        perror("close");
+      if (close(pipefd1[1]) == -1)
+        perror("close");
+
+      if (close(pipefd2[0]) == -1)
+        perror("close");
+      if (close(pipefd2[1]) == -1)
+        perror("close");
+
+      execvp(args[1][0], args[1]);
+
+      perror("exec");
+      exit(EXIT_FAILURE);
+    }
+
+    if (close(pipefd1[0]) == -1)
+      perror("close");
+    if (close(pipefd1[1]) == -1)
+      perror("close");
+
+    pid3 = fork();
+    if (pid3 == 0) {
+      if (dup2(pipefd2[0], STDIN_FILENO) == -1)
+        perror("dup2");
+
+      if (close(pipefd2[0]) == -1)
+        perror("close");
+      if (close(pipefd2[1]) == -1)
+        perror("close");
+
+      execvp(args[2][0], args[2]);
+
+      perror("exec");
+      exit(EXIT_FAILURE);
+    }
+
+    // close remaining descriptors
+    if (close(pipefd2[0]) == -1)
+      perror("close");
+    if (close(pipefd2[1]) == -1)
+      perror("close");
+
+    // wait for process completion to move on
+    do {
+      while (wait(NULL) > 0)
+        ;
+    } while (errno != ECHILD);
+
+    // clear input storage for next use
     for (i = 0; args[i] != NULL; ++i) {
       for (j = 0; args[i][j] != NULL; ++j)
         free(args[i][j]);
